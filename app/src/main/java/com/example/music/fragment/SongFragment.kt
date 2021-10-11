@@ -1,6 +1,8 @@
 package com.example.music.fragment
 
 import android.content.*
+import android.graphics.BitmapFactory
+import android.media.Image
 import android.os.*
 import android.service.quicksettings.Tile
 import android.util.Log
@@ -8,10 +10,8 @@ import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.ImageButton
-import android.widget.ImageView
-import android.widget.ProgressBar
-import android.widget.TextView
+import android.widget.*
+import androidx.core.view.isVisible
 import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import com.example.music.R
 import com.example.music.models.Song
@@ -26,13 +26,13 @@ class SongFragment(val musicService: MusicService) : Fragment() {
     lateinit var tvDuration: TextView
     lateinit var btnRepeat: ImageButton
     lateinit var btnShuffle: ImageButton
-    private val listSongs = mutableListOf<Song>()
-    lateinit var progressBar: ProgressBar
+    lateinit var tvProgressChange: TextView
+    lateinit var progressBar: SeekBar
     lateinit var tvCurDuration: TextView
+    lateinit var ivContent : ImageView
     lateinit var btnPause: FloatingActionButton
     private var curSong: Song? = null
-    private var isBound = false
-
+    private var fromUser = false
 
     val broadcast = object : BroadcastReceiver() {
         override fun onReceive(p0: Context?, p1: Intent?) {
@@ -44,19 +44,7 @@ class SongFragment(val musicService: MusicService) : Fragment() {
                 if (it.action == "updatePosition") {
                     val value = it.getIntExtra("value", 0)
                     Log.e("value", value.toString())
-                    updateSeekBar(value)
-                }
-            }
-        }
-    }
-    val broadcast2 = object : BroadcastReceiver() {
-        override fun onReceive(p0: Context?, p1: Intent?) {
-            p1?.let {
-
-                if (it.action == "updatePosition") {
-                    val value = it.getIntExtra("value", 0)
-                    Log.e("value", value.toString())
-                    updateSeekBar(value)
+                    updateSeekBar(value, fromUser)
                 }
             }
         }
@@ -72,27 +60,20 @@ class SongFragment(val musicService: MusicService) : Fragment() {
             MusicService.ACTION_PAUSE -> changeTogglePausePlayUi()
             else -> Unit
         }
-
     }
 
     private fun registerReceiver() {
-            val filter = IntentFilter("fromNotifyToActivity")
-            filter.addAction("updatePosition")
+        val filter = IntentFilter("fromNotifyToActivity")
+        filter.addAction("updatePosition")
         LocalBroadcastManager.getInstance(requireActivity()).registerReceiver(
             broadcast,
             filter
         )
-//        LocalBroadcastManager.getInstance(requireActivity()).registerReceiver(
-//            broadcast2,
-//            IntentFilter("updatePosition")
-//        )
     }
 
     private fun unregisterReceiver() {
         LocalBroadcastManager.getInstance(requireContext()).unregisterReceiver(broadcast)
-       // LocalBroadcastManager.getInstance(requireContext()).unregisterReceiver(broadcast2)
     }
-
 
     override fun onStart() {
         super.onStart()
@@ -111,17 +92,19 @@ class SongFragment(val musicService: MusicService) : Fragment() {
         val view = inflater.inflate(R.layout.fragment_song, container, false)
         curSong = musicService.getCurSong()
         initView(view)
-        // startThread()
-        initControls(view)
+        initButton(view)
         return view
     }
 
-    private fun initControls(view: View) {
+    private fun initButton(view: View) {
         btnPause = view.findViewById<FloatingActionButton>(R.id.btn_pause)
         changeTogglePausePlayUi()
         val btnPrev = view.findViewById<ImageView>(R.id.btn_prev)
         val btnNext = view.findViewById<ImageView>(R.id.btn_next)
-
+        val btnBack = view.findViewById<ImageButton>(R.id.btn_back)
+        btnBack.setOnClickListener {
+            requireActivity().supportFragmentManager.popBackStack()
+        }
         btnPause.setOnClickListener {
             musicService.togglePlayPause()
             changeTogglePausePlayUi()
@@ -153,12 +136,40 @@ class SongFragment(val musicService: MusicService) : Fragment() {
         tvSinger = view.findViewById<TextView>(R.id.tv_singer)
         tvCurDuration = view.findViewById<TextView>(R.id.tv_current_duration)
         tvDuration = view.findViewById<TextView>(R.id.tv_duration)
-        progressBar = view.findViewById<ProgressBar>(R.id.progress_horizontal)
+        progressBar = view.findViewById<SeekBar>(R.id.progress_horizontal)
         btnRepeat = view.findViewById(R.id.btn_repeat)
         btnShuffle = view.findViewById(R.id.btn_shuffle)
+        tvProgressChange = view.findViewById(R.id.tv_progress_change)
+        tvProgressChange.isVisible = false
+        ivContent = view.findViewById(R.id.iv_content)
         updateUiWhenChangeSong()
         changeRepeatState()
         changeShuffleState()
+        listenSeekBarChange()
+    }
+
+    private fun listenSeekBarChange() {
+
+        progressBar.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
+            var newPos = 0
+            override fun onProgressChanged(p0: SeekBar?, p1: Int, p2: Boolean) {
+                if (fromUser) newPos = p1
+                tvProgressChange.text = formatTime(newPos)
+            }
+
+            override fun onStartTrackingTouch(p0: SeekBar?) {
+                fromUser = true
+                tvProgressChange.isVisible = true
+
+            }
+
+            override fun onStopTrackingTouch(p0: SeekBar?) {
+                musicService.seekTo(newPos)
+                fromUser = false
+                tvProgressChange.isVisible = false
+            }
+
+        })
     }
 
     private fun formatTime(time: Int): String {
@@ -178,8 +189,14 @@ class SongFragment(val musicService: MusicService) : Fragment() {
             tvTitle.text = it.title
             tvSinger.text = it.singer
             tvDuration.text = formatTime((it.duration / 1000).toInt())
-            tvCurDuration.text = formatTime(musicService.getMediaCurrentPos()/1000)
+            tvCurDuration.text = formatTime(musicService.getMediaCurrentPos() / 1000)
             progressBar.max = (it.duration / 1000).toInt()
+        }
+        val byteArray = musicService.cursong.byteArray
+        if(byteArray.isEmpty()){
+            ivContent.setImageResource(R.drawable.ic_baseline_music_note_24)
+        } else {
+            ivContent.setImageBitmap(BitmapFactory.decodeByteArray(byteArray,0,byteArray.size))
         }
         // togglePausePlay
     }
@@ -204,9 +221,11 @@ class SongFragment(val musicService: MusicService) : Fragment() {
         } else btnShuffle.setImageResource(R.drawable.ic_baseline_shuffle_24)
     }
 
-    private fun updateSeekBar(value: Int) {
-        formatTime(value)
-        tvCurDuration.text = formatTime(value)
-        progressBar.progress = value
+    private fun updateSeekBar(value: Int, fromUser: Boolean) {
+        if (!fromUser) {
+            formatTime(value)
+            tvCurDuration.text = formatTime(value)
+            progressBar.progress = value
+        }
     }
 }

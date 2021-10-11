@@ -8,5 +8,6 @@ data class Song(
     val id: Long,
     val title: String,
     val singer: String?,
-    val duration: Long
+    val duration: Long,
+    val byteArray: ByteArray
 ) :Serializable

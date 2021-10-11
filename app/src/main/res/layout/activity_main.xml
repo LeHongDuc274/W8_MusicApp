@@ -6,6 +6,36 @@
     android:layout_height="match_parent"
     tools:context=".MainActivity">
 
+    <LinearLayout
+        android:id="@+id/tab_bar"
+        android:layout_width="match_parent"
+        android:layout_height="72dp"
+        android:background="@color/purple_200"
+        android:orientation="horizontal"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.5"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent">
+
+        <ImageButton
+            android:id="@+id/btn_back"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:layout_gravity="center"
+            android:layout_marginHorizontal="24dp"
+            android:background="@color/purple_200"
+            android:src="@drawable/ic_baseline_playlist_play_24" />
+
+        <TextView
+            android:id="@+id/tv_tab_name"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:text="Playlist"
+            android:textColor="@color/white"
+            android:textSize="28sp" />
+    </LinearLayout>
+
 
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/rv_songs"
@@ -14,7 +44,7 @@
         app:layout_constraintBottom_toTopOf="@id/ll_layout"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/tab_bar"
         />
 
     <RelativeLayout
@@ -25,7 +55,7 @@
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHorizontal_bias="0.5"
-        android:background="@color/white"
+        android:background="@color/white_two"
         app:layout_constraintStart_toStartOf="parent">
 
         <ImageView
@@ -43,8 +73,10 @@
             android:layout_height="wrap_content"
             android:layout_centerVertical="true"
             android:layout_marginStart="@dimen/margin_small"
+            android:fontFamily="@font/lora_italic_wght"
             android:layout_toStartOf="@+id/btn_pause"
             android:layout_toEndOf="@+id/img_song"
+            android:textStyle="italic"
             android:text="this infor of song"
             android:textSize="@dimen/text_size_medium" />
 

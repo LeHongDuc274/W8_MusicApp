@@ -68,11 +68,11 @@
         app:layout_constraintHorizontal_bias="0.5"
         app:layout_constraintStart_toStartOf="parent" />
 
-    <ProgressBar
+    <SeekBar
         android:id="@+id/progress_horizontal"
         style="?android:attr/progressBarStyleHorizontal"
         android:layout_width="match_parent"
-        android:layout_height="4dp"
+        android:layout_height="wrap_content"
         android:layout_alignParentBottom="true"
         android:layout_marginHorizontal="24dp"
         android:layout_marginBottom="24dp"
@@ -80,6 +80,17 @@
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHorizontal_bias="0.5"
         app:layout_constraintStart_toStartOf="parent" />
+
+    <TextView
+        android:id="@+id/tv_progress_change"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text=""
+        android:textSize="12sp"
+        app:layout_constraintBottom_toTopOf="@+id/progress_horizontal"
+        app:layout_constraintEnd_toStartOf="@+id/tv_duration"
+        app:layout_constraintStart_toEndOf="@+id/tv_current_duration"
+        app:layout_constraintTop_toBottomOf="@+id/tv_singer" />
 
     <TextView
         android:id="@+id/tv_current_duration"
@@ -109,8 +120,11 @@
         android:ellipsize="end"
         android:gravity="center"
         android:maxLines="1"
+        android:fontFamily="@font/ephesis_regular"
         android:text="Title"
-        android:textSize="20sp"
+        android:textSize="24sp"
+        android:textStyle="bold"
+        android:textColor="@color/purple_500"
         app:layout_constraintBottom_toTopOf="@+id/tv_singer"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHorizontal_bias="0.5"
@@ -126,51 +140,68 @@
         android:gravity="center"
         android:maxLines="1"
         android:text="Singer"
+        android:fontFamily="@font/ephesis_regular"
+        android:textColor="@color/purple_200"
         android:textSize="16sp"
         app:layout_constraintBottom_toTopOf="@+id/progress_horizontal"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHorizontal_bias="0.5"
         app:layout_constraintStart_toStartOf="parent" />
 
-    <ImageView
-        android:id="@+id/iv_content"
+
+
+    <com.google.android.material.card.MaterialCardView
+        android:id="@+id/card"
         android:layout_width="match_parent"
         android:layout_height="0dp"
-        android:layout_marginBottom="24dp"
-        android:src="@drawable/ic_baseline_music_note_24"
+        app:cardCornerRadius="@dimen/dp48"
+        app:strokeColor="@color/purple_500"
+        app:strokeWidth="2dp"
         app:layout_constraintBottom_toTopOf="@+id/tv_title"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/tab_bar" />
+        app:layout_constraintTop_toBottomOf="@+id/tab_bar"
+        android:layout_marginHorizontal="24dp"
+        android:layout_marginVertical="12dp">
+
+        <ImageView
+            android:id="@+id/iv_content"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:scaleType="centerCrop"
+            android:src="@drawable/ic_baseline_music_note_24"
+            />
+    </com.google.android.material.card.MaterialCardView>
 
 
     <LinearLayout
         android:id="@+id/tab_bar"
         android:layout_width="match_parent"
         android:layout_height="72dp"
+        android:background="@color/purple_200"
+        android:orientation="horizontal"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHorizontal_bias="0.5"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        android:background="@color/purple_200"
-        android:orientation="horizontal">
+        app:layout_constraintTop_toTopOf="parent">
+
         <ImageButton
+            android:id="@+id/btn_back"
             android:layout_width="40dp"
             android:layout_height="40dp"
-            android:id="@+id/btn_back"
-            android:layout_marginHorizontal="24dp"
-            android:src="@drawable/ic_baseline_arrow_back_24"
-            android:background="@color/purple_200"
             android:layout_gravity="center"
-            />
+            android:layout_marginHorizontal="24dp"
+            android:background="@color/purple_200"
+            android:src="@drawable/ic_baseline_arrow_back_24" />
+
         <TextView
             android:id="@+id/tv_tab_name"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_gravity="center"
-            android:text="Playing"
+            android:text="Now Playing"
             android:textColor="@color/white"
-            android:textSize="28sp"/>
+            android:textSize="28sp" />
     </LinearLayout>
 
 </androidx.constraintlayout.widget.ConstraintLayout>

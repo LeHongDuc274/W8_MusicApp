@@ -5,6 +5,8 @@ import android.app.PendingIntent
 import android.app.Service
 import android.content.ContentUris
 import android.content.Intent
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
 import android.media.MediaPlayer
 import android.net.Uri
 import android.os.*
@@ -12,6 +14,8 @@ import android.provider.MediaStore
 import android.util.Log
 import android.widget.RemoteViews
 import androidx.core.app.NotificationCompat
+import androidx.core.content.res.ResourcesCompat
+import androidx.core.graphics.drawable.toBitmap
 import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import com.example.music.MainActivity
 import com.example.music.R
@@ -137,7 +141,7 @@ class MusicService : Service() {
 
     fun prevSong() {
         if (!repeat) {
-            if (mediaPlayer.currentPosition > 5000) {
+            if (mediaPlayer.currentPosition > 20000) {
                 mediaPlayer.seekTo(0)
                 return
             }
@@ -152,6 +156,7 @@ class MusicService : Service() {
         sendToActivity(ACTION_CHANGE_SONG)
         pushNotification(cursong)
     }
+
     fun isPlaying() = mediaPlayer.isPlaying
     fun getCurSong() = cursong
 
@@ -161,11 +166,16 @@ class MusicService : Service() {
     private fun pushNotification(song: Song) {
         val remoteView = RemoteViews(packageName, R.layout.notify_layout)
         initRemoteView(remoteView, song)
+        val pending = PendingIntent.getActivity(
+            this, 0, Intent(this, MainActivity::class.java),
+            PendingIntent.FLAG_UPDATE_CURRENT
+        )
         initControlRemoteView(remoteView, song)
         val notification =
             NotificationCompat.Builder(this, MyApp.CHANNEL_ID)
                 .setCustomContentView(remoteView)
                 .setSmallIcon(R.drawable.ic_launcher_foreground)
+                .setContentIntent(pending)
                 .setSound(null)
                 .build()
         startForeground(1, notification)
@@ -200,12 +210,21 @@ class MusicService : Service() {
     private fun initRemoteView(remoteView: RemoteViews, song: Song) {
         remoteView.setTextViewText(R.id.tv_title, song.title)
         remoteView.setTextViewText(R.id.tv_singer, song.singer)
-
-        remoteView.setImageViewResource(R.id.iv_notify, R.drawable.outline_not_started_black_24)
+        setImageNotify(remoteView)
         remoteView.setImageViewResource(
             R.id.btn_pause,
             if (mediaPlayer.isPlaying) R.drawable.outline_pause_circle_black_24 else R.drawable.outline_not_started_black_24
         )
+    }
+
+    private fun setImageNotify(remoteView: RemoteViews) {
+        val byteArray = cursong.byteArray
+        if (byteArray.isNotEmpty()) {
+            remoteView.setImageViewBitmap(
+                R.id.iv_notify,
+                BitmapFactory.decodeByteArray(byteArray, 0, byteArray.size)
+            )
+        } else remoteView.setImageViewResource(R.id.iv_notify, R.drawable.ic_baseline_music_note_24)
     }
 
     private fun handlerActionFromNotify(actionFromNotify: Int) {
@@ -222,7 +241,7 @@ class MusicService : Service() {
             }
             ACTION_CANCEL -> {
                 stopForeground(true)
-                mediaPlayer.reset()
+                mediaPlayer.stop()
                 sendToActivity(ACTION_CANCEL)
             }
             else -> Unit
@@ -237,6 +256,9 @@ class MusicService : Service() {
 
     }
 
+    fun seekTo(newPos: Int) {
+        mediaPlayer.seekTo(newPos * 1000)
+    }
 
     val runnable = Runnable {
         while (true) {
@@ -260,7 +282,7 @@ class MusicService : Service() {
                     intent.action = "updatePosition"
                     val curPosition = msg.arg1 / 1000
                     intent.putExtra("value", curPosition)
-                   // Log.e("pos", curPosition.toString())
+                    // Log.e("pos", curPosition.toString())
                     LocalBroadcastManager.getInstance(this@MusicService).sendBroadcast(intent)
                 }
             }
@@ -276,7 +298,6 @@ class MusicService : Service() {
         handler.removeCallbacksAndMessages(null)
         if (thread.isInterrupted == false) thread.interrupt()
     }
-
 
     companion object {
         const val ACTION_UPDATE_POSITION = 6
