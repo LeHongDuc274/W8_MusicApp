@@ -37,6 +37,18 @@
     </LinearLayout>
 
 
+    <androidx.appcompat.widget.SearchView
+        android:layout_width="match_parent"
+        android:id="@+id/search_view"
+        android:layout_marginVertical="8dp"
+        android:background="@drawable/shape_search_view"
+        android:layout_height="wrap_content"
+        android:layout_marginHorizontal="24dp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.5"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/tab_bar" />
+
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/rv_songs"
         android:layout_width="0dp"
@@ -44,18 +56,17 @@
         app:layout_constraintBottom_toTopOf="@id/ll_layout"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/tab_bar"
-        />
+        app:layout_constraintTop_toBottomOf="@+id/search_view" />
 
     <RelativeLayout
         android:id="@+id/ll_layout"
         android:layout_width="match_parent"
         android:layout_height="@dimen/height_notify"
+        android:background="@color/white_two"
         android:orientation="horizontal"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHorizontal_bias="0.5"
-        android:background="@color/white_two"
         app:layout_constraintStart_toStartOf="parent">
 
         <ImageView
@@ -73,12 +84,12 @@
             android:layout_height="wrap_content"
             android:layout_centerVertical="true"
             android:layout_marginStart="@dimen/margin_small"
-            android:fontFamily="@font/lora_italic_wght"
             android:layout_toStartOf="@+id/btn_pause"
             android:layout_toEndOf="@+id/img_song"
-            android:textStyle="italic"
+            android:fontFamily="@font/lora_italic_wght"
             android:text="this infor of song"
-            android:textSize="@dimen/text_size_medium" />
+            android:textSize="@dimen/text_size_medium"
+            android:textStyle="italic" />
 
         <ImageView
             android:id="@+id/btn_pause"
@@ -89,7 +100,6 @@
             android:layout_marginHorizontal="@dimen/margin_small"
             android:src="@drawable/ic_baseline_play_arrow_24" />
 
-
     </RelativeLayout>
 
     <androidx.fragment.app.FragmentContainerView
@@ -97,10 +107,9 @@
         android:name="androidx.navigation.fragment.NavHostFragment"
         android:layout_width="0dp"
         android:layout_height="0dp"
+        app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintLeft_toLeftOf="parent"
         app:layout_constraintRight_toRightOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintBottom_toBottomOf="parent"
-         />
+        app:layout_constraintTop_toTopOf="parent" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

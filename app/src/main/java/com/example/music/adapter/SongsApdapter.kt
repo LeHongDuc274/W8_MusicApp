@@ -3,6 +3,7 @@ package com.example.music.adapter
 import android.annotation.SuppressLint
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -40,27 +41,47 @@ class SongsApdapter(private val click: (Int) -> Unit) :
         }
     }
 
-        override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
-            return ViewHolder(
-                LayoutInflater.from(parent.context).inflate(
-                    R.layout.item_song, parent, false
-                )
+    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
+        return ViewHolder(
+            LayoutInflater.from(parent.context).inflate(
+                R.layout.item_song, parent, false
             )
-        }
+        )
+    }
 
-        override fun onBindViewHolder(holder: ViewHolder, position: Int) {
-            holder.onBind(listSongs[position])
-            holder.itemView.setOnClickListener {
-                click.invoke(position)
-            }
-        }
-
-
-        override fun getItemCount(): Int {
-            return listSongs.size
-        }
-
-        fun setData(list: MutableList<Song>) {
-            listSongs = list
+    override fun onBindViewHolder(holder: ViewHolder, position: Int) {
+        holder.onBind(listSongs[position])
+        holder.itemView.setOnClickListener {
+            click.invoke(position)
         }
     }
+
+
+    override fun getItemCount(): Int {
+        return listSongs.size
+    }
+
+    fun setData(list: MutableList<Song>) {
+        listSongs = list
+        notifyDataSetChanged()
+    }
+
+    private var constList = mutableListOf<Song>()
+    fun setconstList(list: MutableList<Song>) {
+        constList = list
+    }
+
+    fun search(text: String): MutableList<Song> {
+
+        val searchList = mutableListOf<Song>()
+        constList.forEach {
+            if ((it.singer + it.title).contains(text, ignoreCase = true)) {
+                searchList.add(it)
+            }
+        }
+        setData(searchList)
+        return searchList
+    }
+
+
+}

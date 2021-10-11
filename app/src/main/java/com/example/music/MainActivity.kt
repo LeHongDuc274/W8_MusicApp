@@ -9,11 +9,7 @@ import android.os.*
 import androidx.appcompat.app.AppCompatActivity
 import android.provider.MediaStore
 import android.util.Log
-
-import android.widget.ImageView
-import android.widget.RelativeLayout
-import android.widget.TextView
-import android.widget.Toast
+import android.widget.*
 
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
@@ -36,6 +32,7 @@ class MainActivity : AppCompatActivity() {
     lateinit var btnPause: ImageView
     lateinit var tvContent: TextView
     lateinit var ivSong: ImageView
+    lateinit var searchView: androidx.appcompat.widget.SearchView
     private val listSongs = mutableListOf<Song>()
     private var isBound = false
     private val REQUEST_CODE = 1
@@ -95,6 +92,7 @@ class MainActivity : AppCompatActivity() {
         initViews()
         runtimePermission()
         initControlBottomBar()
+        initSerachViewListenner()
     }
 
     override fun onStart() {
@@ -130,6 +128,35 @@ class MainActivity : AppCompatActivity() {
                 transaction.commit()
             }
         }
+    }
+
+    private fun initSerachViewListenner() {
+        searchView = findViewById(R.id.search_view)
+
+        searchView.setOnCloseListener(object : SearchView.OnCloseListener,
+            androidx.appcompat.widget.SearchView.OnCloseListener {
+            override fun onClose(): Boolean {
+                musicService.setPlayList(listSongs)
+                adapterSong.setData(listSongs)
+                return false
+            }
+        })
+        searchView.setOnQueryTextListener(
+            object : SearchView.OnQueryTextListener,
+                androidx.appcompat.widget.SearchView.OnQueryTextListener {
+                override fun onQueryTextSubmit(query: String?): Boolean {
+                    return false
+                }
+                override fun onQueryTextChange(newText: String?): Boolean {
+                    newText?.let {
+                        val newList = adapterSong.search(it)
+                        adapterSong.setData(newList)
+                        musicService.setPlayList(newList)
+                    }
+                    return true
+                }
+            }
+        )
     }
 
     private fun changePausePlayBtn() {
@@ -213,6 +240,7 @@ class MainActivity : AppCompatActivity() {
             cursor.close()
         }
         adapterSong.notifyDataSetChanged()
+        adapterSong.setconstList(listSongs)
     }
 
     private fun runtimePermission() {
