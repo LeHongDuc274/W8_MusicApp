@@ -7,8 +7,7 @@ import android.content.ContentUris
 import android.content.Intent
 import android.media.MediaPlayer
 import android.net.Uri
-import android.os.Binder
-import android.os.IBinder
+import android.os.*
 import android.provider.MediaStore
 import android.util.Log
 import android.widget.RemoteViews
@@ -33,6 +32,7 @@ class MusicService : Service() {
     private var songPos = 0
     var shuffle = false
     var repeat = false
+    private var thread = Thread()
 
 
     inner class MyBinder() : Binder() {
@@ -41,13 +41,29 @@ class MusicService : Service() {
 
     override fun onCreate() {
         super.onCreate()
-        mediaPlayer.setOnCompletionListener {
-            nextSong()
-        }
+
+        stopThread()
+        startThread()
     }
 
     override fun onBind(p0: Intent?): IBinder {
         return MyBinder()
+    }
+
+    override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+
+        pushNotification(cursong)
+        val actionFromNotify = intent?.getIntExtra("fromNotify", -1)
+        actionFromNotify?.let { handlerActionFromNotify(actionFromNotify) }
+        return START_NOT_STICKY
+    }
+
+
+    override fun onDestroy() {
+        super.onDestroy()
+        stopThread()
+        mediaPlayer.stop()
+        mediaPlayer.release()
     }
 
     fun setPlayList(list: MutableList<Song>) {
@@ -66,6 +82,9 @@ class MusicService : Service() {
             cursong.id
         )
         mediaPlayer = MediaPlayer.create(applicationContext, contentUri)
+        mediaPlayer.setOnCompletionListener {
+            nextSong()
+        }
     }
 
     fun playSong() {
@@ -79,6 +98,7 @@ class MusicService : Service() {
             mediaPlayer.start()
         }
         pushNotification(cursong)
+        sendToActivity(ACTION_PAUSE)
     }
 
     fun setRepeat() {
@@ -90,7 +110,6 @@ class MusicService : Service() {
             //repeat = false
             mediaPlayer.isLooping = false
         }
-
     }
 
     fun setShuffle() {
@@ -110,8 +129,10 @@ class MusicService : Service() {
         } else { // repeat enable -> seek to start
             mediaPlayer.seekTo(0)
             mediaPlayer.isLooping = true
+            playSong()
         }
         pushNotification(cursong)
+        sendToActivity(ACTION_CHANGE_SONG)
     }
 
     fun prevSong() {
@@ -128,37 +149,18 @@ class MusicService : Service() {
             mediaPlayer.seekTo(0)
             mediaPlayer.isLooping = true
         }
+        sendToActivity(ACTION_CHANGE_SONG)
         pushNotification(cursong)
-
     }
-
     fun isPlaying() = mediaPlayer.isPlaying
     fun getCurSong() = cursong
-    fun getMediaPlayer() = mediaPlayer
 
     fun getMediaCurrentPos() = mediaPlayer.currentPosition
-    override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-
-        pushNotification(cursong)
-        val actionFromNotify = intent?.getIntExtra("fromNotify", -1)
-        actionFromNotify?.let { handlerActionFromNotify(actionFromNotify) }
-
-        return START_NOT_STICKY
-    }
-
-
-    override fun onDestroy() {
-        super.onDestroy()
-        mediaPlayer.stop()
-        mediaPlayer.release()
-    }
 
 
     private fun pushNotification(song: Song) {
         val remoteView = RemoteViews(packageName, R.layout.notify_layout)
         initRemoteView(remoteView, song)
-        val intent = Intent(this, MainActivity::class.java)
-
         initControlRemoteView(remoteView, song)
         val notification =
             NotificationCompat.Builder(this, MyApp.CHANNEL_ID)
@@ -177,14 +179,14 @@ class MusicService : Service() {
 
             setOnClickPendingIntent(R.id.btn_pause, getPendingIntent(ACTION_PAUSE))
 
-            setOnClickPendingIntent(R.id.btn_cancel,getPendingIntent(ACTION_CANCEL))
+            setOnClickPendingIntent(R.id.btn_cancel, getPendingIntent(ACTION_CANCEL))
 
         }
     }
 
     @SuppressLint("UnspecifiedImmutableFlag")
     private fun getPendingIntent(action: Int): PendingIntent {
-        val intent = Intent(this,NotifyReceiver::class.java)
+        val intent = Intent(this, NotifyReceiver::class.java)
         intent.putExtra("fromNotify", action)
         intent.action = FROM_NOTIFY
         return PendingIntent.getBroadcast(
@@ -211,16 +213,12 @@ class MusicService : Service() {
             ACTION_PAUSE -> {
                 togglePlayPause()
                 pushNotification(cursong)
-                sendToActivity(ACTION_PAUSE)
             }
             ACTION_PREV -> {
                 prevSong()
-                sendToActivity(ACTION_CHANGE_SONG)
             }
             ACTION_NEXT -> {
                 nextSong()
-                sendToActivity(ACTION_CHANGE_SONG)
-
             }
             ACTION_CANCEL -> {
                 stopForeground(true)
@@ -234,13 +232,54 @@ class MusicService : Service() {
     private fun sendToActivity(action: Int) {
         val intent = Intent()
         intent.action = "fromNotifyToActivity"
-        intent.putExtra("fromNotifyToActivity",action)
+        intent.putExtra("fromNotifyToActivity", action)
         LocalBroadcastManager.getInstance(this).sendBroadcast(intent)
 
     }
 
 
+    val runnable = Runnable {
+        while (true) {
+            try {
+                Thread.sleep(1000)
+            } catch (e: InterruptedException) {
+                e.printStackTrace()
+            }
+            val curPos = this.getMediaCurrentPos()
+            if (isPlaying()) {
+                handler.sendMessage(handler.obtainMessage(1, curPos, 0))
+            }
+        }
+    }
+    val handler = object : Handler(Looper.getMainLooper()) {
+        override fun handleMessage(msg: Message) {
+
+            when (msg.what) {
+                1 -> {
+                    val intent = Intent()
+                    intent.action = "updatePosition"
+                    val curPosition = msg.arg1 / 1000
+                    intent.putExtra("value", curPosition)
+                   // Log.e("pos", curPosition.toString())
+                    LocalBroadcastManager.getInstance(this@MusicService).sendBroadcast(intent)
+                }
+            }
+        }
+    }
+
+    fun startThread() {
+        thread = Thread(runnable)
+        handler.post { thread.start() }
+    }
+
+    fun stopThread() {
+        handler.removeCallbacksAndMessages(null)
+        if (thread.isInterrupted == false) thread.interrupt()
+    }
+
+
     companion object {
+        const val ACTION_UPDATE_POSITION = 6
         const val ACTION_PREV = 0
         const val ACTION_PAUSE = 1
         const val ACTION_RESUME = 2

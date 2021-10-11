@@ -24,29 +24,46 @@ class SongFragment(val musicService: MusicService) : Fragment() {
     lateinit var tvSinger: TextView
     lateinit var tvTitle: TextView
     lateinit var tvDuration: TextView
-    lateinit var btnRepeat : ImageButton
-    lateinit var btnShuffle : ImageButton
+    lateinit var btnRepeat: ImageButton
+    lateinit var btnShuffle: ImageButton
     private val listSongs = mutableListOf<Song>()
     lateinit var progressBar: ProgressBar
     lateinit var tvCurDuration: TextView
     lateinit var btnPause: FloatingActionButton
     private var curSong: Song? = null
     private var isBound = false
-    private var thread = Thread()
 
 
-    val broadcast = object : BroadcastReceiver(){
+    val broadcast = object : BroadcastReceiver() {
         override fun onReceive(p0: Context?, p1: Intent?) {
             p1?.let {
-                if(it.action=="fromNotifyToActivity"){
-                    val value = it.getIntExtra("fromNotifyToActivity",-1)
+                if (it.action == "fromNotifyToActivity") {
+                    val value = it.getIntExtra("fromNotifyToActivity", -1)
                     handlerReceiver(value)
+                }
+                if (it.action == "updatePosition") {
+                    val value = it.getIntExtra("value", 0)
+                    Log.e("value", value.toString())
+                    updateSeekBar(value)
                 }
             }
         }
     }
+    val broadcast2 = object : BroadcastReceiver() {
+        override fun onReceive(p0: Context?, p1: Intent?) {
+            p1?.let {
+
+                if (it.action == "updatePosition") {
+                    val value = it.getIntExtra("value", 0)
+                    Log.e("value", value.toString())
+                    updateSeekBar(value)
+                }
+            }
+        }
+    }
+
     private fun handlerReceiver(value: Int) {
-        when(value){
+        when (value) {
             MusicService.ACTION_CHANGE_SONG -> {
                 changeCurSong(musicService.cursong)
                 updateUiWhenChangeSong()
@@ -57,22 +74,33 @@ class SongFragment(val musicService: MusicService) : Fragment() {
         }
 
     }
-    private fun registerReceiver(){
-        LocalBroadcastManager.getInstance(requireActivity()).registerReceiver(broadcast,
-            IntentFilter("fromNotifyToActivity")
+
+    private fun registerReceiver() {
+            val filter = IntentFilter("fromNotifyToActivity")
+            filter.addAction("updatePosition")
+        LocalBroadcastManager.getInstance(requireActivity()).registerReceiver(
+            broadcast,
+            filter
         )
-    }
-    private fun unregisterReceiver(){
-        LocalBroadcastManager.getInstance(requireContext()).unregisterReceiver(broadcast)
+//        LocalBroadcastManager.getInstance(requireActivity()).registerReceiver(
+//            broadcast2,
+//            IntentFilter("updatePosition")
+//        )
     }
 
-    override fun onAttach(context: Context) {
-        super.onAttach(context)
+    private fun unregisterReceiver() {
+        LocalBroadcastManager.getInstance(requireContext()).unregisterReceiver(broadcast)
+       // LocalBroadcastManager.getInstance(requireContext()).unregisterReceiver(broadcast2)
+    }
+
+
+    override fun onStart() {
+        super.onStart()
         registerReceiver()
     }
-    override fun onDestroy() {
-        super.onDestroy()
-        stopThread()
+
+    override fun onStop() {
+        super.onStop()
         unregisterReceiver()
     }
 
@@ -83,7 +111,7 @@ class SongFragment(val musicService: MusicService) : Fragment() {
         val view = inflater.inflate(R.layout.fragment_song, container, false)
         curSong = musicService.getCurSong()
         initView(view)
-        startThread()
+        // startThread()
         initControls(view)
         return view
     }
@@ -127,82 +155,58 @@ class SongFragment(val musicService: MusicService) : Fragment() {
         tvDuration = view.findViewById<TextView>(R.id.tv_duration)
         progressBar = view.findViewById<ProgressBar>(R.id.progress_horizontal)
         btnRepeat = view.findViewById(R.id.btn_repeat)
-        btnShuffle= view.findViewById(R.id.btn_shuffle)
+        btnShuffle = view.findViewById(R.id.btn_shuffle)
         updateUiWhenChangeSong()
         changeRepeatState()
         changeShuffleState()
     }
 
-    private fun formatTime(time: Long): String {
-        val minute = time / 1000 / 60
-        val seconds = time / 1000 % 60
+    private fun formatTime(time: Int): String {
+        val minute = time / 60
+        val seconds = time % 60
         return "$minute:$seconds"
     }
-    private fun changeCurSong(newSong :Song){
+
+    private fun changeCurSong(newSong: Song) {
         curSong = newSong
     }
+
     private fun updateUiWhenChangeSong() {
         //change curSong
         // content
         curSong?.let {
             tvTitle.text = it.title
             tvSinger.text = it.singer
-            tvDuration.text = formatTime(it.duration)
-            tvCurDuration.text = formatTime(musicService.getMediaCurrentPos().toLong())
+            tvDuration.text = formatTime((it.duration / 1000).toInt())
+            tvCurDuration.text = formatTime(musicService.getMediaCurrentPos()/1000)
             progressBar.max = (it.duration / 1000).toInt()
         }
         // togglePausePlay
-
     }
-    private fun changeTogglePausePlayUi(){
+
+    private fun changeTogglePausePlayUi() {
         if (!musicService.isPlaying()) {
             btnPause.setImageResource(R.drawable.ic_baseline_play_arrow_24)
         } else {
             btnPause.setImageResource(R.drawable.ic_baseline_pause_24)
         }
     }
-    private fun changeRepeatState(){
-        if(musicService.repeat){
+
+    private fun changeRepeatState() {
+        if (musicService.repeat) {
             btnRepeat.setImageResource(R.drawable.ic_repeat_on)
         } else btnRepeat.setImageResource(R.drawable.ic_baseline_repeat_24)
     }
-    private fun changeShuffleState(){
-        if(musicService.shuffle){
+
+    private fun changeShuffleState() {
+        if (musicService.shuffle) {
             btnShuffle.setImageResource(R.drawable.ic_shuffle_on)
         } else btnShuffle.setImageResource(R.drawable.ic_baseline_shuffle_24)
     }
 
-
-    val runnable = Runnable {
-        while (musicService.isPlaying()) {
-            try {
-                Thread.sleep(1000)
-            } catch (e: InterruptedException) {
-                e.printStackTrace()
-            }
-            val curPos = musicService.getMediaCurrentPos()
-            handler.sendMessage(handler.obtainMessage(1, curPos, 0))
-        }
+    private fun updateSeekBar(value: Int) {
+        formatTime(value)
+        tvCurDuration.text = formatTime(value)
+        progressBar.progress = value
     }
-    val handler = object : Handler(Looper.getMainLooper()) {
-        override fun handleMessage(msg: Message) {
-            when (msg.what) {
-                1 -> {
-                    progressBar.progress = msg.arg1 / 1000
-                    tvCurDuration.text = formatTime(msg.arg1.toLong())
-                }
-            }
-        }
-    }
-
-    fun startThread() {
-        thread = Thread(runnable)
-        handler.post { thread.start() }
-    }
-
-    fun stopThread() {
-        handler.removeCallbacksAndMessages(null)
-        if (thread.isInterrupted == false) thread.interrupt()
-    }
-
 }

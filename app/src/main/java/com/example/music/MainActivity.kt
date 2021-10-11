@@ -51,9 +51,11 @@ class MainActivity : AppCompatActivity() {
 
     private fun handlerReceiver(value: Int) {
         when(value){
-            ACTION_CHANGE_SONG -> changeContent()
+            ACTION_CHANGE_SONG -> {
+                changeContent()
+                changePausePlayBtn()
+            }
             ACTION_PAUSE -> changePausePlayBtn()
-
             else -> Unit
         }
 
@@ -176,7 +178,7 @@ class MainActivity : AppCompatActivity() {
         )
         val selection = "${MediaStore.Audio.Media.DURATION} >= ?"
         val selectionArgs = arrayOf(
-            TimeUnit.MILLISECONDS.convert(1, TimeUnit.MINUTES).toString()
+            TimeUnit.MILLISECONDS.convert(0, TimeUnit.MINUTES).toString()
         )
         val query = contentResolver.query(
             collection,
