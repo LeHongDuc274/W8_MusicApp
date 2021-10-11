@@ -16,7 +16,6 @@ class NotifyReceiver : BroadcastReceiver() {
             val value = p1.getIntExtra("fromNotify", -1)
            // Log.e("value",value.toString())
             replyToService(value, p0)
-
         }
     }
     private fun replyToService(value: Int, p0: Context?) {

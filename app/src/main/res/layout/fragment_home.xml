@@ -35,11 +35,11 @@
             android:src="@drawable/ic_baseline_music_note_24" />
 
         <TextView
-            android:layout_marginStart="@dimen/margin_small"
             android:id="@+id/tv_infor"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_centerVertical="true"
+            android:layout_marginStart="@dimen/margin_small"
             android:layout_toStartOf="@+id/btn_prev"
             android:layout_toEndOf="@+id/img_song"
             android:text="this infor of song"
@@ -61,7 +61,7 @@
             android:layout_centerVertical="true"
             android:layout_marginHorizontal="@dimen/margin_small"
             android:layout_toStartOf="@+id/btn_next"
-            android:src="@drawable/ic_baseline_pause_24" />
+            android:src="@drawable/ic_baseline_play_arrow_24" />
 
         <ImageView
             android:id="@+id/btn_prev"

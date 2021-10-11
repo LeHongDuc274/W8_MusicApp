@@ -24,6 +24,7 @@ class MyApp : Application() {
                 CHANNEL_NAME,
                 NotificationManager.IMPORTANCE_DEFAULT
             )
+            channel.setSound(null,null)
             val manager: NotificationManager = getSystemService(NotificationManager::class.java)
             manager.createNotificationChannel(channel)
         }
