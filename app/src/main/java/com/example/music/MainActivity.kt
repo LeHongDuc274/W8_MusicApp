@@ -1,15 +1,15 @@
 package com.example.music
 
 import android.content.*
-import android.content.pm.PackageManager
 import android.graphics.BitmapFactory
-import android.media.MediaMetadataRetriever
 import android.os.*
 
 import androidx.appcompat.app.AppCompatActivity
-import android.provider.MediaStore
 import android.util.Log
+import android.view.Menu
+import android.view.MenuItem
 import android.widget.*
+import androidx.appcompat.widget.Toolbar
 
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
@@ -35,7 +35,6 @@ class MainActivity : AppCompatActivity() {
     lateinit var searchView: androidx.appcompat.widget.SearchView
     private var listSongs = mutableListOf<Song>()
     private var isBound = false
-    private val REQUEST_CODE = 1
 
     val broadcast = object : BroadcastReceiver() {
         override fun onReceive(p0: Context?, p1: Intent?) {
@@ -79,6 +78,7 @@ class MainActivity : AppCompatActivity() {
                 )
             }
         }
+
         override fun onServiceDisconnected(p0: ComponentName?) {
             isBound = false
         }
@@ -88,7 +88,8 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
         supportActionBar?.hide()
-
+        val toolbar = findViewById<Toolbar>(R.id.toolbar)
+        setSupportActionBar(toolbar)
         val bundle = intent.extras
         val list = bundle?.getSerializable("data") as MutableList<Song>
         listSongs = list
@@ -151,6 +152,7 @@ class MainActivity : AppCompatActivity() {
                 override fun onQueryTextSubmit(query: String?): Boolean {
                     return false
                 }
+
                 override fun onQueryTextChange(newText: String?): Boolean {
                     newText?.let {
                         val newList = adapterSong.search(it)
@@ -202,7 +204,26 @@ class MainActivity : AppCompatActivity() {
     }
 
 
+    override fun onCreateOptionsMenu(menu: Menu?): Boolean {
+        menuInflater.inflate(R.menu.menu, menu)
 
+        return super.onCreateOptionsMenu(menu)
+
+    }
+
+    override fun onOptionsItemSelected(item: MenuItem): Boolean {
+        when (item.itemId) {
+            R.id.sort_by_name -> {
+                val newList = adapterSong.sorbyName()
+                musicService.setPlayList(newList)
+            }
+            R.id.sort_by_duration -> {
+                val newList = adapterSong.sortbyDuration()
+                musicService.setPlayList(newList)
+            }
+        }
+        return super.onOptionsItemSelected(item)
+    }
 
     override fun onBackPressed() {
         super.onBackPressed()

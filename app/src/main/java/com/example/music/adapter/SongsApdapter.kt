@@ -13,7 +13,9 @@ import androidx.recyclerview.widget.RecyclerView
 import com.example.music.R
 import com.example.music.models.Song
 import java.sql.Time
+import java.util.*
 import java.util.concurrent.TimeUnit
+import kotlin.Comparator
 
 class SongsApdapter(private val click: (Int) -> Unit) :
     RecyclerView.Adapter<SongsApdapter.ViewHolder>() {
@@ -83,5 +85,26 @@ class SongsApdapter(private val click: (Int) -> Unit) :
         return searchList
     }
 
+    fun sortbyDuration(): MutableList<Song> {
+        listSongs.sortWith(object : Comparator<Song> {
+            override fun compare(p0: Song, p1: Song): Int {
+                if (p0.duration > p1.duration) return 1
+                else return -1
+            }
+        })
+        notifyDataSetChanged()
+        return listSongs
+    }
+
+    fun sorbyName(): MutableList<Song> {
+        listSongs.sortWith(object : Comparator<Song> {
+            override fun compare(p0: Song, p1: Song): Int {
+                if (p0.title.get(0) > p1.title.get(0)) return 1
+                else return -1
+            }
+        })
+        notifyDataSetChanged()
+        return listSongs
+    }
 
 }

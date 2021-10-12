@@ -93,7 +93,7 @@ class SplashActivity : AppCompatActivity() {
         )
         val selection = "${MediaStore.Audio.Media.DURATION} >= ?"
         val selectionArgs = arrayOf(
-            TimeUnit.MILLISECONDS.convert(2, TimeUnit.MINUTES).toString()
+            TimeUnit.MILLISECONDS.convert(0, TimeUnit.MINUTES).toString()
         )
         val query = contentResolver.query(
             collection,

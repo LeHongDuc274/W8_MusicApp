@@ -19,6 +19,7 @@ import androidx.core.graphics.drawable.toBitmap
 import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import com.example.music.MainActivity
 import com.example.music.R
+import com.example.music.SplashActivity
 import com.example.music.app.MyApp
 import com.example.music.models.Song
 import com.example.music.receiver.NotifyReceiver
@@ -167,7 +168,7 @@ class MusicService : Service() {
         val remoteView = RemoteViews(packageName, R.layout.notify_layout)
         initRemoteView(remoteView, song)
         val pending = PendingIntent.getActivity(
-            this, 0, Intent(this, MainActivity::class.java),
+            this, 0, Intent(this, SplashActivity::class.java),
             PendingIntent.FLAG_UPDATE_CURRENT
         )
         initControlRemoteView(remoteView, song)
@@ -262,14 +263,15 @@ class MusicService : Service() {
 
     val runnable = Runnable {
         while (true) {
-            try {
-                Thread.sleep(1000)
-            } catch (e: InterruptedException) {
-                e.printStackTrace()
-            }
+
             val curPos = this.getMediaCurrentPos()
             if (isPlaying()) {
                 handler.sendMessage(handler.obtainMessage(1, curPos, 0))
+            }
+            try {
+                Thread.sleep(200)
+            } catch (e: InterruptedException) {
+                e.printStackTrace()
             }
         }
     }
