@@ -33,7 +33,7 @@ class MainActivity : AppCompatActivity() {
     lateinit var tvContent: TextView
     lateinit var ivSong: ImageView
     lateinit var searchView: androidx.appcompat.widget.SearchView
-    private val listSongs = mutableListOf<Song>()
+    private var listSongs = mutableListOf<Song>()
     private var isBound = false
     private val REQUEST_CODE = 1
 
@@ -79,7 +79,6 @@ class MainActivity : AppCompatActivity() {
                 )
             }
         }
-
         override fun onServiceDisconnected(p0: ComponentName?) {
             isBound = false
         }
@@ -89,8 +88,13 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
         supportActionBar?.hide()
+
+        val bundle = intent.extras
+        val list = bundle?.getSerializable("data") as MutableList<Song>
+        listSongs = list
+
         initViews()
-        runtimePermission()
+        adapterSong.setconstList(listSongs)
         initControlBottomBar()
         initSerachViewListenner()
     }
@@ -197,88 +201,8 @@ class MainActivity : AppCompatActivity() {
         changeContent()
     }
 
-    private fun getAllSongs() {
-        val collection =
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                MediaStore.Audio.Media.getContentUri(
-                    MediaStore.VOLUME_EXTERNAL_PRIMARY
-                )
-            } else {
-                MediaStore.Audio.Media.EXTERNAL_CONTENT_URI
-            }
-        val projection = arrayOf(
-            MediaStore.Audio.Media._ID,
-            MediaStore.Audio.Media.TITLE,
-            MediaStore.Audio.Media.ARTIST,
-            MediaStore.Audio.Media.DURATION
-        )
-        val selection = "${MediaStore.Audio.Media.DURATION} >= ?"
-        val selectionArgs = arrayOf(
-            TimeUnit.MILLISECONDS.convert(2, TimeUnit.MINUTES).toString()
-        )
-        val query = contentResolver.query(
-            collection,
-            projection,
-            selection,
-            selectionArgs,
-            null
-        )
-        val retriever = MediaMetadataRetriever()
 
-        query?.let { cursor ->
-            while (cursor.moveToNext()) {
-                val id = cursor.getLong(0)
-                val title = cursor.getString(1)
-                val singer = cursor.getString(2)
-                val duration = cursor.getLong(3)
-                val uri =
-                    ContentUris.withAppendedId(MediaStore.Audio.Media.EXTERNAL_CONTENT_URI, id)
-                retriever.setDataSource(applicationContext, uri)
-                val bitmap = retriever.embeddedPicture ?: byteArrayOf()
-                listSongs.add(Song(id, title, singer, duration, bitmap))
-            }
-            cursor.close()
-        }
-        adapterSong.notifyDataSetChanged()
-        adapterSong.setconstList(listSongs)
-    }
 
-    private fun runtimePermission() {
-        if (ContextCompat.checkSelfPermission(
-                applicationContext,
-                android.Manifest.permission.READ_EXTERNAL_STORAGE
-            )
-            != PackageManager.PERMISSION_GRANTED
-        ) {
-
-            ActivityCompat.requestPermissions(
-                this,
-                arrayOf(android.Manifest.permission.READ_EXTERNAL_STORAGE),
-                REQUEST_CODE
-            )
-        } else {
-            getAllSongs()
-        }
-    }
-
-    override fun onRequestPermissionsResult(
-        requestCode: Int,
-        permissions: Array<out String>,
-        grantResults: IntArray
-    ) {
-        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
-        if (requestCode == REQUEST_CODE) {
-            if (grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                getAllSongs()
-            } else {
-                ActivityCompat.requestPermissions(
-                    this,
-                    arrayOf(android.Manifest.permission.READ_EXTERNAL_STORAGE),
-                    REQUEST_CODE
-                )
-            }
-        }
-    }
 
     override fun onBackPressed() {
         super.onBackPressed()
