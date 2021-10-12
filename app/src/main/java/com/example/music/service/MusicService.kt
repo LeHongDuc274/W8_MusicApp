@@ -58,6 +58,7 @@ class MusicService : Service() {
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
 
         pushNotification(cursong)
+        Log.e("size" ,cursong.title)
         val actionFromNotify = intent?.getIntExtra("fromNotify", -1)
         actionFromNotify?.let { handlerActionFromNotify(actionFromNotify) }
         return START_NOT_STICKY
@@ -80,7 +81,7 @@ class MusicService : Service() {
 
     fun setNewSong(newPos: Int) {
         songPos = newPos
-        mediaPlayer.reset()
+        mediaPlayer.stop()
         cursong = playlist[songPos]
         val contentUri: Uri = ContentUris.withAppendedId(
             MediaStore.Audio.Media.EXTERNAL_CONTENT_URI,
@@ -141,18 +142,14 @@ class MusicService : Service() {
     }
 
     fun prevSong() {
-        if (!repeat) {
-            if (mediaPlayer.currentPosition > 20000) {
-                mediaPlayer.seekTo(0)
-                return
-            }
-            if (songPos > 0) {
-                setNewSong(songPos - 1)
-                playSong()
-            }
-        } else {
+
+        if (mediaPlayer.currentPosition > 20000) {
             mediaPlayer.seekTo(0)
-            mediaPlayer.isLooping = true
+            return
+        } else if (songPos > 0) {
+            songPos--
+            setNewSong(songPos)
+            playSong()
         }
         sendToActivity(ACTION_CHANGE_SONG)
         pushNotification(cursong)

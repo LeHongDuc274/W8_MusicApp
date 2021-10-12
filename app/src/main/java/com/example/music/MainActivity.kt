@@ -68,6 +68,7 @@ class MainActivity : AppCompatActivity() {
                     musicService.setPlayList(listSongs)
                     if (!musicService.isPlaying()) {
                         musicService.setNewSong(0)
+                        Log.e("size1",listSongs.size.toString())
                     }
                     changeContent()
                     changePausePlayBtn()
@@ -92,6 +93,7 @@ class MainActivity : AppCompatActivity() {
         setSupportActionBar(toolbar)
         val bundle = intent.extras
         val list = bundle?.getSerializable("data") as MutableList<Song>
+        listSongs.clear()
         listSongs = list
 
         initViews()
@@ -203,7 +205,6 @@ class MainActivity : AppCompatActivity() {
         changeContent()
     }
 
-
     override fun onCreateOptionsMenu(menu: Menu?): Boolean {
         menuInflater.inflate(R.menu.menu, menu)
 
@@ -224,7 +225,6 @@ class MainActivity : AppCompatActivity() {
         }
         return super.onOptionsItemSelected(item)
     }
-
     override fun onBackPressed() {
         super.onBackPressed()
         changePausePlayBtn()

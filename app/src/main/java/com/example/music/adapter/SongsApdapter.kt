@@ -106,5 +106,4 @@ class SongsApdapter(private val click: (Int) -> Unit) :
         notifyDataSetChanged()
         return listSongs
     }
-
 }
