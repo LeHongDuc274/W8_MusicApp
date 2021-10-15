@@ -16,6 +16,10 @@ import androidx.core.os.bundleOf
 import com.example.music.models.Song
 import java.util.concurrent.TimeUnit
 import kotlin.concurrent.thread
+import android.Manifest.permission
+
+
+
 
 class SplashActivity : AppCompatActivity() {
 
@@ -26,6 +30,8 @@ class SplashActivity : AppCompatActivity() {
     private val START = 1
     private val FETCHING = 2
     private val SUCCESS = 3
+    private var CANCEL = 4
+    private var cancel = false
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_splash)
@@ -63,6 +69,7 @@ class SplashActivity : AppCompatActivity() {
         grantResults: IntArray
     ) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+
         if (requestCode == REQUEST_CODE) {
             if (grantResults[0] == PackageManager.PERMISSION_GRANTED) {
                 getAllSongs()
@@ -123,7 +130,10 @@ class SplashActivity : AppCompatActivity() {
                 val bitmap = retriever.embeddedPicture ?: byteArrayOf()
                 val song = Song(id, title, singer, duration, bitmap)
                 handler.sendMessage(handler.obtainMessage(FETCHING, song))
+                if(cancel){
+                    handler.sendMessage(handler.obtainMessage(CANCEL))
 
+                }
             }
             handler.sendMessage(handler.obtainMessage(SUCCESS))
             cursor.close()
@@ -145,6 +155,10 @@ class SplashActivity : AppCompatActivity() {
                 SUCCESS -> {
                     stopThread()
                     gotoHomeActivity()
+                }
+                CANCEL -> {
+                    stopThread()
+                    finish()
                 }
             }
         }
@@ -176,5 +190,10 @@ class SplashActivity : AppCompatActivity() {
     override fun onDestroy() {
         super.onDestroy()
         stopThread()
+    }
+
+    override fun onBackPressed() {
+        super.onBackPressed()
+        cancel = true
     }
 }

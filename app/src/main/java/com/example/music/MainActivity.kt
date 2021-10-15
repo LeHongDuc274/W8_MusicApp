@@ -68,7 +68,6 @@ class MainActivity : AppCompatActivity() {
                     musicService.setPlayList(listSongs)
                     if (!musicService.isPlaying()) {
                         musicService.setNewSong(0)
-                        Log.e("size1",listSongs.size.toString())
                     }
                     changeContent()
                     changePausePlayBtn()
@@ -93,9 +92,8 @@ class MainActivity : AppCompatActivity() {
         setSupportActionBar(toolbar)
         val bundle = intent.extras
         val list = bundle?.getSerializable("data") as MutableList<Song>
-        listSongs.clear()
         listSongs = list
-
+        bind()
         initViews()
         adapterSong.setconstList(listSongs)
         initControlBottomBar()
@@ -104,6 +102,9 @@ class MainActivity : AppCompatActivity() {
 
     override fun onStart() {
         super.onStart()
+    }
+
+    private fun bind() {
         val intent = Intent(this, MusicService::class.java)
         bindService(intent, connection, Context.BIND_AUTO_CREATE)
     }
@@ -123,6 +124,10 @@ class MainActivity : AppCompatActivity() {
         val layout = findViewById<RelativeLayout>(R.id.ll_layout)
 
         btnPause.setOnClickListener {
+            val intent = Intent(this, MusicService::class.java)
+
+            startService(intent)
+
             musicService.togglePlayPause()
             changePausePlayBtn()
         }
@@ -130,6 +135,7 @@ class MainActivity : AppCompatActivity() {
         layout.setOnClickListener {
             if (isBound && listSongs.isNotEmpty()) {
                 val transaction = supportFragmentManager.beginTransaction()
+                transaction.setCustomAnimations(R.animator.slide_in_left,R.animator.slide_in_right)
                 transaction.add(R.id.nav_host_fragment, SongFragment(musicService))
                 transaction.addToBackStack(null)
                 transaction.commit()
@@ -159,7 +165,9 @@ class MainActivity : AppCompatActivity() {
                     newText?.let {
                         val newList = adapterSong.search(it)
                         adapterSong.setData(newList)
-                        musicService.setPlayList(newList)
+                        if (isBound) {
+                            musicService.setPlayList(newList)
+                        }
                     }
                     return true
                 }
@@ -225,6 +233,7 @@ class MainActivity : AppCompatActivity() {
         }
         return super.onOptionsItemSelected(item)
     }
+
     override fun onBackPressed() {
         super.onBackPressed()
         changePausePlayBtn()

@@ -15,6 +15,7 @@ import com.example.music.models.Song
 import java.sql.Time
 import java.util.*
 import java.util.concurrent.TimeUnit
+import java.util.stream.Collector
 import kotlin.Comparator
 
 class SongsApdapter(private val click: (Int) -> Unit) :
@@ -76,10 +77,9 @@ class SongsApdapter(private val click: (Int) -> Unit) :
     fun search(text: String): MutableList<Song> {
 
         val searchList = mutableListOf<Song>()
-        constList.forEach {
-            if ((it.singer + it.title).contains(text, ignoreCase = true)) {
-                searchList.add(it)
-            }
+        constList.forEach { song ->
+            if ((song.singer + song.title).contains(text, ignoreCase = true))
+                searchList.add(song)
         }
         setData(searchList)
         return searchList
@@ -88,8 +88,7 @@ class SongsApdapter(private val click: (Int) -> Unit) :
     fun sortbyDuration(): MutableList<Song> {
         listSongs.sortWith(object : Comparator<Song> {
             override fun compare(p0: Song, p1: Song): Int {
-                if (p0.duration > p1.duration) return 1
-                else return -1
+                return (p0.duration - p1.duration).toInt()
             }
         })
         notifyDataSetChanged()
@@ -97,12 +96,7 @@ class SongsApdapter(private val click: (Int) -> Unit) :
     }
 
     fun sorbyName(): MutableList<Song> {
-        listSongs.sortWith(object : Comparator<Song> {
-            override fun compare(p0: Song, p1: Song): Int {
-                if (p0.title.get(0) > p1.title.get(0)) return 1
-                else return -1
-            }
-        })
+        listSongs.sortWith(compareBy(String.CASE_INSENSITIVE_ORDER, { it.title }))
         notifyDataSetChanged()
         return listSongs
     }

@@ -24,19 +24,20 @@ import com.example.music.app.MyApp
 import com.example.music.models.Song
 import com.example.music.receiver.NotifyReceiver
 import java.io.IOException
+import java.lang.IllegalStateException
 import kotlin.random.Random
 
 
 class MusicService : Service() {
     private var mediaPlayer = MediaPlayer()
 
-    // var isPlaying = false
     private var playlist = mutableListOf<Song>()
     private val listSongPos = mutableListOf<Int>()
     lateinit var cursong: Song
     private var songPos = 0
     var shuffle = false
     var repeat = false
+    private var volum : Float = 0.5F
     private var thread = Thread()
 
 
@@ -159,7 +160,11 @@ class MusicService : Service() {
     fun getCurSong() = cursong
 
     fun getMediaCurrentPos() = mediaPlayer.currentPosition
-
+    fun setVolum(vol : Float){
+        volum = vol
+        mediaPlayer.setVolume(vol,vol)
+    }
+    fun getVolum() = volum
 
     private fun pushNotification(song: Song) {
         val remoteView = RemoteViews(packageName, R.layout.notify_layout)
@@ -260,16 +265,20 @@ class MusicService : Service() {
 
     val runnable = Runnable {
         while (true) {
-
-            val curPos = this.getMediaCurrentPos()
-            if (isPlaying()) {
-                handler.sendMessage(handler.obtainMessage(1, curPos, 0))
-            }
             try {
-                Thread.sleep(200)
-            } catch (e: InterruptedException) {
+                val curPos = this.getMediaCurrentPos()
+                if (mediaPlayer.isPlaying()) {
+                    handler.sendMessage(handler.obtainMessage(1, curPos, 0))
+                    try {
+                        Thread.sleep(200)
+                    } catch (e: InterruptedException) {
+                        e.printStackTrace()
+                    }
+                }
+            } catch (e: IllegalStateException){
                 e.printStackTrace()
             }
+
         }
     }
     val handler = object : Handler(Looper.getMainLooper()) {

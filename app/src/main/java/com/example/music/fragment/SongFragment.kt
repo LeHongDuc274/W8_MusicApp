@@ -1,7 +1,9 @@
 package com.example.music.fragment
 
 import android.content.*
+import android.content.Context.AUDIO_SERVICE
 import android.graphics.BitmapFactory
+import android.media.AudioManager
 import android.media.Image
 import android.os.*
 import android.service.quicksettings.Tile
@@ -28,9 +30,11 @@ class SongFragment(val musicService: MusicService) : Fragment() {
     lateinit var btnShuffle: ImageButton
     lateinit var tvProgressChange: TextView
     lateinit var progressBar: SeekBar
+    lateinit var volumBar: SeekBar
     lateinit var tvCurDuration: TextView
-    lateinit var ivContent : ImageView
+    lateinit var ivContent: ImageView
     lateinit var btnPause: FloatingActionButton
+    lateinit var ivVolum : ImageView
     private var curSong: Song? = null
     private var fromUser = false
 
@@ -137,18 +141,27 @@ class SongFragment(val musicService: MusicService) : Fragment() {
         tvCurDuration = view.findViewById<TextView>(R.id.tv_current_duration)
         tvDuration = view.findViewById<TextView>(R.id.tv_duration)
         progressBar = view.findViewById<SeekBar>(R.id.progress_horizontal)
+        volumBar = view.findViewById(R.id.volum)
         btnRepeat = view.findViewById(R.id.btn_repeat)
         btnShuffle = view.findViewById(R.id.btn_shuffle)
         tvProgressChange = view.findViewById(R.id.tv_progress_change)
         tvProgressChange.isVisible = false
         ivContent = view.findViewById(R.id.iv_content)
+        ivVolum = view.findViewById(R.id.iv_volum)
         updateUiWhenChangeSong()
+        val audioManager = requireActivity().getSystemService(AUDIO_SERVICE) as AudioManager
+        volumBar.max = audioManager.getStreamMaxVolume(AudioManager.STREAM_MUSIC)
+        if (audioManager.getStreamVolume(AudioManager.STREAM_MUSIC) == 0 ){
+            ivVolum.setImageResource(R.drawable.ic_baseline_volume_off_24)
+        } else ivVolum.setImageResource(R.drawable.ic_baseline_volume_up_24)
+        volumBar.progress = audioManager.getStreamVolume(AudioManager.STREAM_MUSIC)
         changeRepeatState()
         changeShuffleState()
         listenSeekBarChange()
     }
 
     private fun listenSeekBarChange() {
+        val audioManager = requireActivity().getSystemService(AUDIO_SERVICE) as AudioManager
 
         progressBar.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
             var newPos = 0
@@ -156,17 +169,28 @@ class SongFragment(val musicService: MusicService) : Fragment() {
                 if (fromUser) newPos = p1
                 tvProgressChange.text = formatTime(newPos)
             }
-
             override fun onStartTrackingTouch(p0: SeekBar?) {
                 fromUser = true
                 tvProgressChange.isVisible = true
-
             }
-
             override fun onStopTrackingTouch(p0: SeekBar?) {
                 musicService.seekTo(newPos)
                 fromUser = false
                 tvProgressChange.isVisible = false
+            }
+
+        })
+
+        volumBar.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
+            override fun onProgressChanged(p0: SeekBar?, p1: Int, p2: Boolean) {
+                audioManager.setStreamVolume(AudioManager.STREAM_MUSIC, p1, 0)
+                if (audioManager.getStreamVolume(AudioManager.STREAM_MUSIC) == 0 ){
+                    ivVolum.setImageResource(R.drawable.ic_baseline_volume_off_24)
+                } else ivVolum.setImageResource(R.drawable.ic_baseline_volume_up_24)
+            }
+            override fun onStartTrackingTouch(p0: SeekBar?) {
+            }
+            override fun onStopTrackingTouch(p0: SeekBar?) {
             }
 
         })
@@ -193,10 +217,10 @@ class SongFragment(val musicService: MusicService) : Fragment() {
             progressBar.max = (it.duration / 1000).toInt()
         }
         val byteArray = musicService.cursong.byteArray
-        if(byteArray.isEmpty()){
+        if (byteArray.isEmpty()) {
             ivContent.setImageResource(R.drawable.ic_baseline_music_note_24)
         } else {
-            ivContent.setImageBitmap(BitmapFactory.decodeByteArray(byteArray,0,byteArray.size))
+            ivContent.setImageBitmap(BitmapFactory.decodeByteArray(byteArray, 0, byteArray.size))
         }
         // togglePausePlay
     }
